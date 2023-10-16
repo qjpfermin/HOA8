@@ -1,0 +1,19 @@
+---
+- name: Install and Configure Nagios Servers
+  hosts: nagios_servers
+  become: yes
+  roles:
+    - base
+    - web_servers
+    - nagios
+
+  handlers:
+    - name: Restart Nagios
+      service:
+        name: nagios
+        state: restarted
+
+  vars:
+    nagios_servers:
+      - controlNode1@192.168.56.108
+      - centOS@192.168.56.108

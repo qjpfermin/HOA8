@@ -1,0 +1,102 @@
+---
+
+  - name: Install required packages (Ubuntu)
+    apt:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - apache2
+      - libapache2-mod-php
+      - build-essential
+      - libgd-dev
+      - libmcrypt-dev
+      - libssl-dev
+      - unzip
+      - gettext
+    when ansible_distribution == "Ubuntu"
+
+  - name: Install required packages (Centos)
+    apt:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - httpd
+      - php
+      - php-cli
+      - gcc
+      - glibc
+      - glibc-common
+      - gd
+      - gd-devel
+      - make
+      - net-snmp
+      - openssl
+      - perl
+      - postfix
+    when ansible_distribution == "Centos"
+
+  - name: Download Nagios Core source code
+    get_url        url: "https://assets.nagios.com/downloads/nagioscore/releases/nagios-4.4.6.tar.gz"
+        dest: "/tmp/nagioscore.tar.gz"
+
+    - name: Extract Nagios Core
+      ansible.builtin.unarchive:
+        src: "/tmp/nagioscore.tar.gz"
+        dest: "/tmp"
+        remote_src: yes
+
+    - name: Compile and Install Nagios Core
+      shell: |
+        cd /tmp/nagios-4.4.6
+        ./configure --with-command-group=nagcmd
+        make all
+        make install
+        make install-init
+        make install-config
+        make install-commandmode
+        make install-exfoliation
+        make install-webconf
+      when: "ansible_facts['distribution'] == 'Ubuntu'"
+
+    - name: Compile and Install Nagios Core
+      shell: |
+        cd /tmp/nagios-4.4.6
+        ./configure --with-command-group=nagcmd
+        make all
+        make install
+        make install-init
+        make install-config
+        make install-commandmode
+        make install-exfoliation
+        make install-webconf
+      when: "ansible_facts['distribution'] == 'CentOS'"
+
+    - name: Create Nagios Admin User
+      command: htpasswd -c /usr/local/nagios/etc/htpasswd.users nagiosadmin
+      when: "ansible_facts['distribution'] == 'Ubuntu'"
+
+    - name: Enable and Start Apache (Ubuntu)
+      systemd:
+        name: apache2
+        enabled: yes
+        state: started
+      when: "ansible_facts['distribution'] == 'Ubuntu'"
+
+    - name: Enable and Start Apache (CentOS)
+      systemd:
+        name: httpd
+        enabled: yes
+        state: started
+      when: "ansible_facts['distribution'] == 'CentOS'"
+
+    - name: Enable and Start Nagios
+      systemd:
+        name: nagios
+        enabled: yes
+        state: started
+
+    - name: Remove Nagios source code
+      file:
+        path: "/tmp/nagioscore.tar.gz"
+        state: absent
+      ignore_errors: yes

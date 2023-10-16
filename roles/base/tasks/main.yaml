@@ -1,0 +1,44 @@
+    - name: Update package cache (Ubuntu)
+      apt:
+        update_cache: yes
+      when: "ansible_facts['os_family'] == 'Debian'"
+
+    - name: Install required packages (Ubuntu)
+      apt:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - apache2
+        - php
+        - libapache2-mod-php
+        - build-essential
+        - libgd-dev
+        - openssl
+        - libssl-dev
+        - unzip
+        - python3-passlib
+      when: "ansible_facts['os_family'] == 'Debian'"
+
+    - name: Install required packages (CentOS)
+      yum:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - httpd
+        - php
+        - gcc
+        - glibc
+        - glibc-common
+        - gd
+        - gd-devel
+        - make
+        - net-snmp
+        - openssl-devel
+        - unzip
+      when: "ansible_facts['os_family'] == 'RedHat'"
+
+    - name: Install passlib using pip
+      command: /usr/bin/pip3 install passlib
+      become: yes
+      when: "ansible_facts['os_family'] == 'RedHat'"
+
